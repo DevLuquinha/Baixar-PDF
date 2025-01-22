@@ -5,6 +5,8 @@ from google.cloud.firestore_v1.base_query import FieldFilter, Or
 cred =  credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\sdkfirebase.json")
 # cred_oficial = credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\SDKAdminFirebaseOficial.json")
 
+# Alguma coisa massa
+
 import schedule
 from schedule import repeat, every, run_pending
 import wget
