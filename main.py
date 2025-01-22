@@ -2,8 +2,8 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter, Or
-# cred =  credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\sdkfirebase.json")
-cred_oficial = credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\SDKAdminFirebaseOficial.json")
+cred =  credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\sdkfirebase.json")
+# cred_oficial = credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\SDKAdminFirebaseOficial.json")
 
 import schedule
 from schedule import repeat, every, run_pending
@@ -13,12 +13,25 @@ import shutil
 import time 
 
 # Inicializa o firebase (entra no firebase)
-# firebase_admin.initialize_app(cred)
-firebase_admin.initialize_app(cred_oficial)
+firebase_admin.initialize_app(cred)
+# firebase_admin.initialize_app(cred_oficial)
 db = firestore.client()
+# index_rvc = 1
 
 name_collection = 'BancoDadosRVC'
 
+def update_index_rvc():
+    collection_ref = db.collection('RVCs_Sincronizados')
+    doc_ref = collection_ref.document('fXFRHJ4oorSsL92u6DfK')
+
+    doc = {}
+    for i in collection_ref.stream():
+        doc = i.to_dict()
+    index_rvc = doc['index_rvc']
+    print(index_rvc)
+
+    doc_ref.update({'index_rvc': index_rvc + 1})
+    return index_rvc
 def get_documents_with_pdf(collectionName):
     try:
         doc_ref = db.collection(collectionName)
@@ -60,24 +73,23 @@ def download_pdf(dictData):
 
         # Tratamento de strings na lista de hora da visita
         list_data_agendada_gross =  dictData['list_data_visita']
-        list_data_without  = [s.replace(" ", "") for s in list_data_agendada_gross]
-        list_data_replace  = [s.replace("/", "-") for s in list_data_without]
-        list_data_agendada = [s.replace(":", ".") for s in list_data_replace]
-
+        list_data_agendada = [s[0:10].replace("/", "-") for s in list_data_agendada_gross]
+        
         # Baixa cada url da lista de urls
         for i, url in enumerate(list_url):
-            name_pdf = f"{list_num_proposta[i]}_{list_data_agendada[i]}"
+            
+            name_pdf = f"{list_num_proposta[i]}_RVC-{update_index_rvc()}_{list_data_agendada[i]}"
             wget.download(url, out=f"{name_pdf}.pdf")
 
-            if not os.path.exists(f"{path_server}/{name_pdf}"):
-                os.mkdir(f"{path_server}/{name_pdf}")
-                shutil.move(f"{path_arch}/{name_pdf}.pdf", f"{path_server}/{name_pdf}/{name_pdf}.pdf")
-            else:
-                shutil.move(f"{path_arch}/{name_pdf}.pdf", f"{path_server}/{name_pdf}/{name_pdf}.pdf")
-    except:
+            shutil.move(f"{path_arch}/{name_pdf}.pdf", f"{path_server}/{name_pdf}.pdf")
+       
+    except Exception as ex:
         print(f"Não foi possível realizar o download :(")
+        print(str(ex))
+   # 27/01/2025 - 10:40:00
 
-@repeat(every(30).seconds)
+
+@repeat(every(10).seconds)
 def schedule_download():
     dict_url = get_documents_with_pdf(name_collection)
     download_pdf(dict_url)
@@ -85,5 +97,5 @@ def schedule_download():
 # schedule.every(30).seconds.do(schedule_download)
 
 while True:
-    run_pending()
-    time.sleep(1)
+   run_pending()
+   time.sleep(1)
