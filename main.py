@@ -2,8 +2,9 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter, Or
-cred =  credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\sdkfirebase.json")
-# cred_oficial = credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\SDKAdminFirebaseOficial.json")
+
+# cred =  credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\sdkfirebase.json")
+cred_oficial = credentials.Certificate(r"C:\Users\Micro\Documents\Firebase\SDKAdminFirebaseOficial.json")
 
 import schedule
 from schedule import repeat, every, run_pending
@@ -13,22 +14,21 @@ import shutil
 import time 
 
 # Inicializa o firebase (entra no firebase)
-firebase_admin.initialize_app(cred)
-# firebase_admin.initialize_app(cred_oficial)
+# firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred_oficial)
 db = firestore.client()
 # index_rvc = 1
 
 name_collection = 'BancoDadosRVC'
 
 def update_index_rvc():
-    collection_ref = db.collection('RVCs_Sincronizados')
-    doc_ref = collection_ref.document('fXFRHJ4oorSsL92u6DfK')
+    collection_ref = db.collection('RVCs_Sinc')
+    doc_ref = collection_ref.document('xLA6yOcWuCRfE42K8iEN')
 
     doc = {}
     for i in collection_ref.stream():
         doc = i.to_dict()
     index_rvc = doc['index_rvc']
-    print(index_rvc)
 
     doc_ref.update({'index_rvc': index_rvc + 1})
     return index_rvc
