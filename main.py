@@ -66,7 +66,7 @@ def update_field_sinc(documentID):
 def download_pdf(dictData):
     try:
         path_arch   = "C:/Users/Micro/Desktop/ENVIAR_PDF_SERVIDOR"
-        path_server = "Z:/00-ARQUIVOS MODELOS/XX_PLUG-IN/05_MAKENG TECHNOLOGY/PDFs"
+        path_server = "Z:\03-DRIVE CLIENTES\MOSAIC\02-CMA\RVC"
 
         list_url  = dictData['list_url']
         list_num_proposta = dictData['list_num_proposta']
