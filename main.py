@@ -17,11 +17,11 @@ import time
 # firebase_admin.initialize_app(cred)
 firebase_admin.initialize_app(cred_oficial)
 db = firestore.client()
-# index_rvc = 1
 
 name_collection = 'BancoDadosRVC'
 
-def update_index_rvc():
+# Metodo que atualiza o index do RVC, ex: RVC-1, RVC-2, RVC-3...
+def updateIndexRvc():
     collection_ref = db.collection('RVCs_Sinc')
     doc_ref = collection_ref.document('xLA6yOcWuCRfE42K8iEN')
 
@@ -32,12 +32,23 @@ def update_index_rvc():
 
     doc_ref.update({'index_rvc': index_rvc + 1})
     return index_rvc
-def get_documents_with_pdf(collectionName):
+# Metodo que atualiza o campo sincronizado no documento
+def updateFieldSinc(documentID):
+    try:
+        collection_ref = db.collection(name_collection)
+        doc_ref = collection_ref.document(documentID)
+
+        # Atualiza o campo sinc para true
+        doc_ref.update({'sinc_server': True})
+    except Exception as ex:
+        print(f'Erro ao atualizar campo: {str(ex)}')
+# Metodo que pega os documentos que possue a url do pdf no campo respectivo
+def getDocumentsWithPdf(collectionName):
     try:
         doc_ref = db.collection(collectionName)
         dict_out = {"list_num_proposta": [], "list_url": [], "list_data_visita": [], "list_nome": []}
 
-        # Solicitação com filtro de pdf vazio
+        # Solicitação com filtro de pdf diferente de vazio
         query = doc_ref.where(filter= FieldFilter('url_PDF', '!=', ''))
 
         docs = query.stream()
@@ -50,21 +61,14 @@ def get_documents_with_pdf(collectionName):
                 dict_out['list_url'].append(data['url_PDF'])
                 dict_out['list_data_visita'].append(data['data_hora_agendada'])
                 dict_out['list_nome'].append(data['solicitante'])
-                update_field_sinc(doc.id)
+                updateFieldSinc(doc.id)
         return dict_out
     except Exception as ex:
         print(f'Erro ao selecionar documentos: {str(ex)}')
-def update_field_sinc(documentID):
+# Metodo que faz o download do pdf e envia para a pasta no servidor
+def downloadPdf(dictData):
     try:
-        collection_ref = db.collection(name_collection)
-        doc_ref = collection_ref.document(documentID)
-
-        # Atualiza o campo sinc para true
-        doc_ref.update({'sinc_server': True})
-    except Exception as ex:
-        print(f'Erro ao atualizar campo: {str(ex)}')
-def download_pdf(dictData):
-    try:
+        # Caminho do arquivo e o caminho do servidor
         path_arch   = "C:/Users/Micro/Desktop/ENVIAR_PDF_SERVIDOR"
         path_server = "Z:/03-DRIVE CLIENTES/MOSAIC/02-CMA/RVC"
 
@@ -78,22 +82,20 @@ def download_pdf(dictData):
         # Baixa cada url da lista de urls
         for i, url in enumerate(list_url):
             
-            name_pdf = f"{list_num_proposta[i]}_RVC-{update_index_rvc()}_{list_data_agendada[i]}"
+            name_pdf = f"{list_num_proposta[i]}_RVC-{updateIndexRvc()}_{list_data_agendada[i]}"
             wget.download(url, out=f"{name_pdf}.pdf")
 
             shutil.move(f"{path_arch}/{name_pdf}.pdf", f"{path_server}/{name_pdf}.pdf")
-       
     except Exception as ex:
         print(f"Não foi possível realizar o download :(")
         print(str(ex))
 
+# Metodo com uma repetição de 10 segundos
 @repeat(every(10).seconds)
-def schedule_download():
-    dict_url = get_documents_with_pdf(name_collection)
-    download_pdf(dict_url)
-
-# schedule.every(30).seconds.do(schedule_download)
-
+def scheduleDownload():
+    dict_url = getDocumentsWithPdf(name_collection)
+    downloadPdf(dict_url)
+# Carregamento do Schedule
 while True:
    run_pending()
    time.sleep(1)
